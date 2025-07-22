@@ -1,70 +1,61 @@
-# Getting Started with Create React App
+Time Tracker App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Track and visualize how you spend your time across categories like family, friends, personal, and couple time.
 
-## Available Scripts
+🚀 Features
+	•	📆 Calendar Heatmap: See how many hours you spent each day by activity type
+	•	📊 Pie Chart: Visualize distribution of time across categories
+	•	📈 Line Chart: Analyze time trends by week or month
+	•	📝 Activity Log: Add, edit, or delete time-tracked entries
+	•	🔍 Search, Filter & Sort: Filter by category, title, or date with pagination
+	•	📦 Import/Export: Backup or transfer your data as a .json file
+	•	🌙 Dark Mode Toggle
 
-In the project directory, you can run:
+📁 Folder Structure
 
-### `npm start`
+src/
+├── App.js        # Main React component
+├── App.css       # Styling for the app
+├── index.js      # App entry point
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+🛠️ Installation
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+git clone https://github.com/YOUR-USERNAME/time-tracker-app.git
+cd time-tracker-app
+npm install
+npm start
 
-### `npm test`
+🐱‍💻 Technologies
+	•	React
+	•	Recharts
+	•	date-fns
+	•	react-calendar-heatmap
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+💾 Local Storage
 
-### `npm run build`
+All activity data is saved to your browser’s localStorage so you don’t lose your data between sessions.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+🔄 Backup
+	•	Use the Export Data button to save a backup (.json)
+	•	Restore using Import Data
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+📦 Deployment
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+To deploy with Vercel:
 
-### `npm run eject`
+npm install -g vercel
+vercel
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+📜 License
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+MIT License — feel free to use and modify!
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+⸻
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+🙋 Need help?
 
-## Learn More
+Open an issue or reach out to the project creator.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+⸻
 
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+This app was designed to help you take control of your time with beautiful, interactive visualizations.
