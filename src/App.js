@@ -1,3 +1,4 @@
+// Full App.js — corrected, clean, and complete
 import React, { useState, useEffect } from 'react';
 import {
   PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer
@@ -21,13 +22,14 @@ export default function App() {
   const [activities, setActivities] = useState([]);
   const [form, setForm] = useState({ id: null, title: '', category: 'family', start: '', end: '', hours: '', notes: '' });
   const [filter, setFilter] = useState({ start: '', end: '' });
-  const [heatmapRange, setHeatmapRange] = useState({
-    start: format(subDays(new Date(), 180), 'yyyy-MM-dd'),
-    end: format(new Date(), 'yyyy-MM-dd')
-  });
   const [isEditing, setIsEditing] = useState(false);
-  const [aggregation, setAggregation] = useState('month');
   const [darkMode, setDarkMode] = useState(false);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const stored = localStorage.getItem('activities');
@@ -40,7 +42,12 @@ export default function App() {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   const handleFilterChange = (e) => setFilter({ ...filter, [e.target.name]: e.target.value });
-  const handleHeatmapChange = (e) => setHeatmapRange({ ...heatmapRange, [e.target.name]: e.target.value });
+  const handleResetFilters = () => {
+    setFilter({ start: '', end: '' });
+    setSearchTerm('');
+    setFilterCategory('all');
+    setCurrentPage(1);
+  };
 
   const addOrUpdateActivity = () => {
     if (isEditing) {
@@ -61,33 +68,32 @@ export default function App() {
     setActivities(activities.filter(a => a.id !== id));
   };
 
-  const filteredActivities = activities.filter(act => {
-    if (!filter.start || !filter.end) return true;
-    const actDate = parseISO(act.start);
-    return actDate >= parseISO(filter.start) && actDate <= parseISO(filter.end);
+  const filtered = activities.filter(act => {
+    const inDateRange = (!filter.start || !filter.end) || (parseISO(act.start) >= parseISO(filter.start) && parseISO(act.start) <= parseISO(filter.end));
+    const matchesSearch = act.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = filterCategory === 'all' || act.category === filterCategory;
+    return inDateRange && matchesSearch && matchesCategory;
   });
+
+  const sorted = [...filtered].sort((a, b) => sortOrder === 'asc' ? parseISO(a.start) - parseISO(b.start) : parseISO(b.start) - parseISO(a.start));
+  const paginated = sorted.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(sorted.length / itemsPerPage);
 
   const summary = CATEGORIES.map(cat => ({
     name: cat,
-    value: filteredActivities.filter(a => a.category === cat).reduce((sum, a) => sum + Number(a.hours || 0), 0),
+    value: filtered.filter(a => a.category === cat).reduce((sum, a) => sum + Number(a.hours || 0), 0),
   }));
 
   const timeSeries = {};
-  filteredActivities.forEach(a => {
-    let dateKey;
-    if (aggregation === 'week') {
-      const startDate = startOfWeek(parseISO(a.start), { weekStartsOn: 0 });
-      dateKey = format(startDate, 'yyyy-MM-dd');
-    } else {
-      dateKey = format(parseISO(a.start), 'yyyy-MM');
-    }
+  filtered.forEach(a => {
+    const dateKey = format(parseISO(a.start), 'yyyy-MM');
     if (!timeSeries[dateKey]) timeSeries[dateKey] = { date: dateKey };
     timeSeries[dateKey][a.category] = (timeSeries[dateKey][a.category] || 0) + Number(a.hours || 0);
   });
   const timeData = Object.values(timeSeries).sort((a, b) => new Date(a.date) - new Date(b.date));
 
   const calendarMap = {};
-  activities.forEach(a => {
+  filtered.forEach(a => {
     const startDate = parseISO(a.start);
     const endDate = parseISO(a.end || a.start);
     const days = differenceInCalendarDays(endDate, startDate);
@@ -98,44 +104,36 @@ export default function App() {
       calendarMap[day][a.category] = (calendarMap[day][a.category] || 0) + hoursPerDay;
     }
   });
-
   const heatmapValues = Object.entries(calendarMap).map(([day, categoryData]) => {
     const topCategory = Object.entries(categoryData).sort((a, b) => b[1] - a[1])[0];
     const totalHours = Object.values(categoryData).reduce((sum, h) => sum + h, 0);
-    const color = CATEGORY_COLOR[topCategory[0]];
     return {
       date: day,
       count: totalHours,
-      color,
-      category: topCategory[0]
+      color: CATEGORY_COLOR[topCategory[0]]
     };
-  }).filter(d => {
-    const dateObj = parseISO(d.date);
-    return dateObj >= parseISO(heatmapRange.start) && dateObj <= parseISO(heatmapRange.end);
   });
 
   return (
-    <div className={darkMode ? 'container dark' : 'container'}>
+    <div className={darkMode ? 'container dark' : 'container'} style={{ maxWidth: '100%', padding: '1rem' }}>
       <header>
         <h1>Time Tracker</h1>
         <p>Track and analyze how you spend your time</p>
-        <button onClick={() => setDarkMode(!darkMode)} style={{ marginTop: '0.5rem' }}>
-          Toggle {darkMode ? 'Light' : 'Dark'} Mode
-        </button>
+        <button onClick={() => setDarkMode(!darkMode)}>Toggle {darkMode ? 'Light' : 'Dark'} Mode</button>
       </header>
 
       <section className="card">
         <h2>Log Activity</h2>
         <div className="form-grid">
           <input type="text" name="title" placeholder="Title" value={form.title} onChange={handleChange} />
-          <select name="category" value={form.category} onChange={handleChange}>
-            {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-          </select>
+          <select name="category" value={form.category} onChange={handleChange}>{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select>
           <input type="date" name="start" value={form.start} onChange={handleChange} />
           <input type="date" name="end" value={form.end} onChange={handleChange} />
           <input type="number" name="hours" placeholder="Hours" value={form.hours} onChange={handleChange} />
           <textarea name="notes" placeholder="Notes" value={form.notes} onChange={handleChange} />
-          <button className="primary" onClick={addOrUpdateActivity}>{isEditing ? 'Update' : 'Add'} Activity</button>
+        </div>
+        <div style={{ marginTop: '0.5rem' }}>
+          <button className="primary" onClick={addOrUpdateActivity} style={{ width: '100%' }}>{isEditing ? 'Update' : 'Add'} Activity</button>
         </div>
       </section>
 
@@ -144,10 +142,16 @@ export default function App() {
         <div className="form-grid">
           <input type="date" name="start" value={filter.start} onChange={handleFilterChange} />
           <input type="date" name="end" value={filter.end} onChange={handleFilterChange} />
-          <select value={aggregation} onChange={e => setAggregation(e.target.value)}>
-            <option value="month">Monthly</option>
-            <option value="week">Weekly</option>
+          <input type="text" placeholder="Search title..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
+            <option value="all">All Categories</option>
+            {CATEGORIES.map(c => <option key={c}>{c}</option>)}
           </select>
+          <select value={sortOrder} onChange={e => setSortOrder(e.target.value)}>
+            <option value="desc">Newest First</option>
+            <option value="asc">Oldest First</option>
+          </select>
+          <button onClick={handleResetFilters}>Reset Filters</button>
         </div>
       </section>
 
@@ -167,13 +171,10 @@ export default function App() {
       </section>
 
       <section className="card">
-        <h2>Line Chart - Time by Period</h2>
+        <h2>Line Chart - Time by Month</h2>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={timeData}>
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
+            <XAxis dataKey="date" /><YAxis /><Tooltip /><Legend />
             {CATEGORIES.map(cat => (
               <Line key={cat} type="monotone" dataKey={cat} stroke={CATEGORY_COLOR[cat]} strokeWidth={2} />
             ))}
@@ -182,8 +183,30 @@ export default function App() {
       </section>
 
       <section className="card">
-        <h2>Activity Log</h2>
-        {filteredActivities.map(a => (
+        <h2>Calendar Heatmap</h2>
+        <CalendarHeatmap
+          startDate={filter.start || format(subDays(new Date(), 180), 'yyyy-MM-dd')}
+          endDate={filter.end || format(new Date(), 'yyyy-MM-dd')}
+          values={heatmapValues}
+          showWeekdayLabels
+          gutterSize={3}
+          tooltipDataAttrs={(value) => ({ 'data-tip': value?.date ? `${value.date}: ${value.count || 0} hrs` : '' })}
+          transformDayElement={(el, value) => {
+            const style = {
+              ...el.props.style,
+              backgroundColor: value?.color || '#e5e7eb',
+              opacity: value?.color ? 1 : 0.1,
+              borderRadius: '3px',
+              transition: 'all 0.2s ease'
+            };
+            return React.cloneElement(el, { style });
+          }}
+        />
+      </section>
+
+      <section className="card">
+        <h2 style={{ position: 'sticky', top: 0, background: darkMode ? '#1f2937' : '#fff', zIndex: 1, padding: '0.5rem 0' }}>Activity Log</h2>
+        {paginated.map(a => (
           <div key={a.id} className="log-entry">
             <div>
               <strong>{a.title}</strong> ({a.category})<br />
@@ -196,40 +219,16 @@ export default function App() {
             </div>
           </div>
         ))}
-      </section>
 
-      <section className="card">
-        <h2>Calendar Heatmap</h2>
-        <div className="form-grid">
-          <input type="date" name="start" value={heatmapRange.start} onChange={handleHeatmapChange} />
-          <input type="date" name="end" value={heatmapRange.end} onChange={handleHeatmapChange} />
-        </div>
-        <CalendarHeatmap
-          startDate={heatmapRange.start}
-          endDate={heatmapRange.end}
-          values={heatmapValues}
-          showWeekdayLabels
-          gutterSize={3}
-          tooltipDataAttrs={(value) => ({ 'data-tip': value?.date ? `${value.date}: ${value.count || 0} hrs` : '' })}
-          transformDayElement={(el, value) => {
-            const style = {
-              ...el.props.style,
-              backgroundColor: value?.color || '#e5e7eb',
-              opacity: Math.min(value?.count / 8, 1),
-              borderRadius: '3px',
-              transition: 'all 0.2s ease'
-            };
-            return React.cloneElement(el, { style });
-          }}
-        />
-        <div className="legend" style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap' }}>
-          {CATEGORIES.map((cat) => (
-            <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div style={{ width: '16px', height: '16px', backgroundColor: CATEGORY_COLOR[cat], borderRadius: '4px' }}></div>
-              <span>{cat}</span>
-            </div>
-          ))}
-        </div>
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1} style={{ opacity: currentPage === 1 ? 0.5 : 1 }}>Prev</button>
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button key={i} onClick={() => setCurrentPage(i + 1)} style={{ fontWeight: currentPage === i + 1 ? 'bold' : 'normal' }}>{i + 1}</button>
+            ))}
+            <button onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages} style={{ opacity: currentPage === totalPages ? 0.5 : 1 }}>Next</button>
+          </div>
+        )}
       </section>
     </div>
   );
